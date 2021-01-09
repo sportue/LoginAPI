@@ -8,6 +8,9 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net;
+using System.Net.Mail;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace API.Services.MailManager
@@ -15,17 +18,17 @@ namespace API.Services.MailManager
     public class MailManager : IMailManager
     {
         private readonly IHostEnvironment env;
- 
+
         private readonly IOptions<ApplicationSettings> settings;
 
         public MailManager(
             IHostEnvironment env,
-          
+
             IOptions<ApplicationSettings> settings
             )
         {
             this.env = env;
-         
+
             this.settings = settings;
         }
 
@@ -51,36 +54,68 @@ namespace API.Services.MailManager
         /// <param name="FileName"></param>
         /// <param name="Recipients"></param>
         /// <returns></returns>
-        public string Send(string Subject, string FromName, string FileName, Dictionary<string, dynamic> Recipients, dynamic ExtraData = null)
+        public string Send(string Subject, string To, string FileName, Dictionary<string, string> Recipients, dynamic ExtraData = null)
         {
             string MailContent = ReadFileContent(FileName);
-            string HeaderContent = ReadFileContent("header.html");
-            string FooterContent = ReadFileContent("footer.html");
 
-            MailContent = MailContent.Replace("#header#", HeaderContent);
-            MailContent = MailContent.Replace("#footer#", FooterContent);
+            var fromAdress = new MailAddress("cihan.oguz@windowslive.com");
+            var ToAdress = new MailAddress(To);
 
-            RestClient client = new RestClient();
-            client.BaseUrl = new Uri(settings.Value.MailgunAPISettings.BaseURL);
-            client.Authenticator = new HttpBasicAuthenticator(settings.Value.MailgunAPISettings.AuthenticatorType, settings.Value.MailgunAPISettings.APIKey);
-            RestRequest request = new RestRequest();
-            request.AddParameter("domain", settings.Value.MailgunAPISettings.Domain, ParameterType.UrlSegment);
-            request.Resource = settings.Value.MailgunAPISettings.Resource;
-            request.AddParameter("from", (!string.IsNullOrWhiteSpace(FromName) ? FromName : "Sportue") + " <" + settings.Value.MailgunAPISettings.FromMail + ">");
-            request.AddParameter("subject", Subject);
-            request.AddParameter("html", MailContent);
-            request.AddParameter("recipient-variables", Recipients.ToJson());
 
+
+            MailContent = MailContent.Replace("%recipient.FullName%", Recipients["recipient.FullName"]);
             foreach (var item in Recipients)
-                request.AddParameter("to", item.Key);
-
-            request.Method = Method.POST;
-            IRestResponse response = client.Execute(request);
-            // client.PostAsync(request, null);
+            {
+                MailContent = MailContent.Replace("%" + item.Key + "%", item.Value);
+            }
 
 
+            using (var smtp = new System.Net.Mail.SmtpClient
+            {
+                Host = "smtp.live.com",
+                Port = 587,
+                EnableSsl = true,
+                DeliveryMethod = SmtpDeliveryMethod.Network,
+                Credentials = new NetworkCredential(fromAdress.Address, "Nestoeanycho1*")
+            })
+            {
+                using (var message = new MailMessage(fromAdress, ToAdress) { Subject = Subject, Body = MailContent, IsBodyHtml = true })
+                {
+                    smtp.Send(message);
+                }
+            }
 
             return "";
+
+        }
+
+        public void SendSmpt(string subject, string body, string mail)
+        {
+            var fromAdress = new MailAddress("cihan.oguz@windowslive.com");
+            var toAdress = new MailAddress(mail);
+
+            string MailContent = ReadFileContent("forgot-password.html");
+            MailContent = MailContent.Replace("%recipient.FullName%", "cihan");
+            // string HeaderContent = ReadFileContent("header.html");
+            // string FooterContent = ReadFileContent("footer.html");
+
+            // MailContent = MailContent.Replace("#header#", HeaderContent);
+            // MailContent = MailContent.Replace("#footer#", FooterContent);
+
+            using (var smtp = new System.Net.Mail.SmtpClient
+            {
+                Host = "smtp.live.com",
+                Port = 587,
+                EnableSsl = true,
+                DeliveryMethod = SmtpDeliveryMethod.Network,
+                Credentials = new NetworkCredential(fromAdress.Address, "Nestoeanycho1*")
+            })
+            {
+                using (var message = new MailMessage(fromAdress, toAdress) { Subject = subject, Body = MailContent, IsBodyHtml = true })
+                {
+                    smtp.Send(message);
+                }
+            }
         }
     }
 }
