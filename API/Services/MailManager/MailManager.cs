@@ -76,7 +76,7 @@ namespace API.Services.MailManager
                 Port = 587,
                 EnableSsl = true,
                 DeliveryMethod = SmtpDeliveryMethod.Network,
-                Credentials = new NetworkCredential(fromAdress.Address, "Nestoeanycho1*")
+                Credentials = new NetworkCredential(fromAdress.Address, "This is your passowrd")
             })
             {
                 using (var message = new MailMessage(fromAdress, ToAdress) { Subject = Subject, Body = MailContent, IsBodyHtml = true })
@@ -108,7 +108,7 @@ namespace API.Services.MailManager
                 Port = 587,
                 EnableSsl = true,
                 DeliveryMethod = SmtpDeliveryMethod.Network,
-                Credentials = new NetworkCredential(fromAdress.Address, "Nestoeanycho1*")
+                Credentials = new NetworkCredential(fromAdress.Address, "This is your passowrd")
             })
             {
                 using (var message = new MailMessage(fromAdress, toAdress) { Subject = subject, Body = MailContent, IsBodyHtml = true })
