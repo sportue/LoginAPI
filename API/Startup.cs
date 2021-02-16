@@ -41,7 +41,7 @@ namespace API
       services.AddMvc();
       services.AddControllers(); 
       
-
+      //aa
       var key = Encoding.ASCII.GetBytes("this is my custom Secret key for authnetication");
       services.AddAuthentication(x =>
       {
